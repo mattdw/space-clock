@@ -6,15 +6,14 @@
 
 
 (def *size* 500)
-(def *padding* (/ *size* 10))
-(def *window-size* (+ *size* (* 2 *padding*)))
+(def *padding* #(/ % 10))
 
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
 
-(defn is-am?
+(defn is-pm?
   [{h :hours}]
-  (< h 12))
+  (> h 12))
 
 (defn even-minute?
   [{m :minutes}]
@@ -29,7 +28,7 @@
   [current total even?]
   (let [percent (/ current total)
         degrees (* percent 360)]
-    (if even?
+    (if (not even?)
       (let [start 0
             extent degrees]
         [(- start) (- extent)])
@@ -49,15 +48,17 @@
 
 (defn draw-clock
   [p #^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
-  (let [d (- (min width height) (* 2 *padding*))
+  (let [size (min width height)
+        padding (*padding* size)
+        d (- size (* 2 padding))
         diam-minutes (/ d 2)
         diam-seconds (/ d 4)
         even-hour (even-hour? clock)
         even-minute (even-minute? clock)
         twelve-hours (rem hours 12)
-        is-am (is-am? clock)
+        is-pm (is-pm? clock)
         h-arc      (make-arc dims d 0 360)
-        [h-start h-extent] (calc-arc twelve-hours 12 is-am)
+        [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
         h-arc-cur  (make-arc dims d h-start h-extent)
         m-arc      (make-arc dims diam-minutes 0 360)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
@@ -103,11 +104,11 @@
 
 (def panel (doto (proxy [JPanel] []
                         (paint [g] (draw-panel panel g CLOCK)))
-                 (.setPreferredSize (new Dimension *window-size* *window-size*))
+                 (.setPreferredSize (new Dimension *size* *size*))
                  (.setMinimumSize (new Dimension 50 50))
                  (.setMaximumSize (new Dimension 2000 2000))))
 
-(def frame (doto (new JFrame "Timer")
+(def frame (doto (new JFrame "Clock")
                  (.add panel)
                  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
                  .pack .show))
