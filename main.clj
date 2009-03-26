@@ -50,7 +50,7 @@
                           [m-arc-cur (. Color white)]
                           [s-arc     (new Color (float 0.5) (float 0.4) (float 0.4))]
                           [s-arc-cur (. Color white)]
-                        ]]        
+                        ]]
       (doto g
         (.setColor colour)
         (.draw arc)
@@ -67,7 +67,7 @@
                  (.setPreferredSize (new Dimension *window-size* *window-size*))
                  (.setMinimumSize (new Dimension 50 50))
                  (.setMaximumSize (new Dimension 2000 2000))))
-                 
+
 (def frame (doto (new JFrame "Timer")
                  (.add panel)
                  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
