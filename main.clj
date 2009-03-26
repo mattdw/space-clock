@@ -99,7 +99,7 @@
         h-floating (+ h (/ m-floating 60))]
     (swap! CLOCK assoc :hours h-floating :minutes m-floating :seconds s-floating)
     (.repaint #^JPanel panel)
-    (Thread/sleep 100)
+    (Thread/sleep (- 1000 ms))
     (recur)))
 
 (timer-loop)
