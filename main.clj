@@ -12,9 +12,9 @@
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
 
-(defn is-pm?
+(defn is-am?
   [{h :hours}]
-  (> h 12))
+  (< h 12))
 
 (defn even-minute?
   [{m :minutes}]
@@ -55,9 +55,9 @@
         even-hour (even-hour? clock)
         even-minute (even-minute? clock)
         twelve-hours (rem hours 12)
-        is-pm (is-pm? clock)
+        is-am (is-am? clock)
         h-arc      (make-arc dims d 0 360)
-        [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
+        [h-start h-extent] (calc-arc twelve-hours 12 is-am)
         h-arc-cur  (make-arc dims d h-start h-extent)
         m-arc      (make-arc dims diam-minutes 0 360)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
