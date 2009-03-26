@@ -12,12 +12,30 @@
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
 
-(defn angle-for-measure
-  "Return degrees out of a circle for current part"
-  [current total]
+(defn is-pm?
+  [{h :hours}]
+  (> h 12))
+
+(defn even-minute?
+  [{m :minutes}]
+  (even? (quot m 1)))
+
+(defn even-hour?
+  [{h :hours}]
+  (even? (quot h 1)))
+
+(defn calc-arc
+  "Return start and extent of arc for component"
+  [current total even?]
   (let [percent (/ current total)
-        degrees (- (* percent 360))]
-    degrees))
+        degrees (* percent 360)]
+    (if even?
+      (let [start 0
+            extent degrees]
+        [(- start) (- extent)])
+      (let [start degrees
+            extent (- 360 degrees)]
+        [(- start) (- extent)]))))
 
 (defn make-arc
   ([[w h] diam start extent cap]
@@ -30,16 +48,23 @@
     (make-arc dims diam start extent Arc2D/PIE)))
 
 (defn draw-clock
-  [p #^Graphics2D g [width height :as dims] {:keys [hours minutes seconds]}]
+  [p #^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
   (let [d (- (min width height) (* 2 *padding*))
         diam-minutes (/ d 2)
         diam-seconds (/ d 4)
+        even-hour (even-hour? clock)
+        even-minute (even-minute? clock)
+        twelve-hours (rem hours 12)
+        is-pm (is-pm? clock)
         h-arc      (make-arc dims d 0 360)
-        h-arc-cur  (make-arc dims d 0 (angle-for-measure hours 12))
+        [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
+        h-arc-cur  (make-arc dims d h-start h-extent)
         m-arc      (make-arc dims diam-minutes 0 360)
-        m-arc-cur  (make-arc dims diam-minutes 0 (angle-for-measure minutes 60))
+        [m-start m-extent] (calc-arc minutes 60 even-hour)
+        m-arc-cur  (make-arc dims diam-minutes m-start m-extent)
         s-arc      (make-arc dims diam-seconds 0 360)
-        s-arc-cur  (make-arc dims diam-seconds 0 (angle-for-measure seconds 60))
+        [s-start s-extent] (calc-arc seconds 60 even-minute)
+        s-arc-cur  (make-arc dims diam-seconds s-start s-extent)
         center-arc (make-arc dims (/ d 100) 0 360)
         min-sec    (make-arc dims diam-seconds 0 360 Arc2D/OPEN)
         hour-min   (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
@@ -90,7 +115,7 @@
 (defn timer-loop
   []
   (let [d (Calendar/getInstance)
-        h (rem (.get d (Calendar/HOUR)) 12)
+        h (.get d (Calendar/HOUR_OF_DAY))
         m (.get d (Calendar/MINUTE))
         s (.get d (Calendar/SECOND))
         ms (.get d (Calendar/MILLISECOND))
