@@ -5,8 +5,16 @@
            (java.util Calendar)))
 
 
-(def *size* 500)
+(def *size* 400)
 (def *padding* #(/ % 10))
+
+(def *color-minutes* Color/lightGray)
+(def *color-hours* Color/gray)
+(def *color-seconds* (new Color 200 50 50))
+
+(def *diam-minutes* #(* % 0.97))
+(def *diam-hours* #(* % 0.5))
+(def *diam-seconds* identity)
 
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
@@ -48,53 +56,57 @@
 
 (defn draw-clock
   [p #^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
-  (let [size (min width height)
-        padding (*padding* size)
-        d (- size (* 2 padding))
-        diam-minutes (/ d 2)
-        diam-seconds (/ d 4)
-        even-hour (even-hour? clock)
-        even-minute (even-minute? clock)
-        twelve-hours (rem hours 12)
-        is-pm (is-pm? clock)
-        h-arc      (make-arc dims d 0 360)
+  (let [; sizes
+        size               (min width height)
+        padding            (*padding* size)
+        d-max              (- size (* 2 padding))
+        diam-hours         (*diam-hours* d-max)
+        diam-minutes       (*diam-minutes* d-max)
+        diam-seconds       (*diam-seconds* d-max)
+        ; flags
+        even-hour          (even-hour? clock)
+        even-minute        (even-minute? clock)
+        twelve-hours       (rem hours 12)
+        is-pm              (is-pm? clock)
+        ; arcs
+        h-arc              (make-arc dims diam-hours 0 360)
         [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
-        h-arc-cur  (make-arc dims d h-start h-extent)
-        m-arc      (make-arc dims diam-minutes 0 360)
+        h-arc-cur          (make-arc dims diam-hours h-start h-extent)
+        m-arc              (make-arc dims diam-minutes 0 360)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
-        m-arc-cur  (make-arc dims diam-minutes m-start m-extent)
-        s-arc      (make-arc dims diam-seconds 0 360)
+        m-arc-cur          (make-arc dims diam-minutes m-start m-extent)
+        s-arc              (make-arc dims diam-seconds 0 360)
         [s-start s-extent] (calc-arc seconds 60 even-minute)
-        s-arc-cur  (make-arc dims diam-seconds s-start s-extent)
-        center-arc (make-arc dims (/ d 100) 0 360)
-        min-sec    (make-arc dims diam-seconds 0 360 Arc2D/OPEN)
-        hour-min   (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
-        hour-out   (make-arc dims d 0 360 Arc2D/OPEN)
+        s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
+        ; decorative arcs
+        center-dot-w       (make-arc dims (* d-max 0.02) 0 360)
+        center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
+        div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
+        div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
+        outer              (make-arc dims d-max 0 360 Arc2D/OPEN)
         ]
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
-    ;(.setColor g (. Color black))
-    ;(.fillRect g 0 0 width height)
-    (doseq [[arc colour] [
-                          [h-arc     (Color/lightGray)]
-                          [h-arc-cur (Color/white)]
-                          [m-arc     (Color/gray)]
-                          [m-arc-cur (Color/white)]
-                          [s-arc     (new Color (float 0.5) (float 0.4) (float 0.4))]
-                          [s-arc-cur (Color/white)]
-                          [center-arc (Color/white)]
+    (doseq [[arc color] [
+                         [s-arc     *color-seconds*]
+                         [s-arc-cur (Color/white)]
+                         [m-arc     *color-minutes*]
+                         [m-arc-cur (Color/white)]
+                         [h-arc     *color-hours*]
+                         [h-arc-cur (Color/white)]
+                         [center-dot-w (Color/white)]
+                         [center-dot-b (Color/darkGray)]
                         ]]
       (doto g
-        (.setColor colour)
-        ;(.draw arc)
+        (.setColor color)
         (.fill arc)))
     (doto g
       (.setStroke (new BasicStroke 2))
       (.setColor Color/white)
-      (.draw min-sec)
-      (.draw hour-min)
-      (.draw hour-out))
+      (.draw div1)
+      (.draw div2)
+      (.draw outer))
     (.dispose g)))
 
 (defn draw-panel
