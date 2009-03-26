@@ -12,8 +12,8 @@
 (def *color-hours* Color/gray)
 (def *color-seconds* (new Color 200 50 50))
 
-(def *diam-minutes* #(* % 0.97))
-(def *diam-hours* #(* % 0.5))
+(def *diam-minutes* #(* % 0.975))
+(def *diam-hours* #(* % 0.55))
 (def *diam-seconds* identity)
 
 (defstruct clock :hours :minutes :seconds)
