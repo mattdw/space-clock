@@ -5,8 +5,8 @@
            (java.util Calendar)))
 
 
-(def *padding* 30)
 (def *size* 500)
+(def *padding* (/ *size* 10))
 (def *window-size* (+ *size* (* 2 *padding*)))
 
 (defstruct clock :hours :minutes :seconds)
