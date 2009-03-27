@@ -1,6 +1,7 @@
 (ns com.culturethree.Timer
 	(:import (javax.swing JFrame JPanel JButton BorderFactory)
 	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
+	         (java.awt.image BufferedImage)
 	         (java.awt.geom Arc2D Arc2D$Double)
            (java.util Calendar)))
 
@@ -22,6 +23,8 @@
 
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
+(def LAST-DIMS (ref [0 0]))
+(def OVERLAY (ref nil))
 
 (defn is-pm?
   [{h :hours}]
@@ -75,8 +78,60 @@
   ([dims diam start extent]
     (make-arc dims diam start extent Arc2D/PIE)))
 
+(defn draw-overlay
+  "div1, div2, outer, center-dot-{w,b}, ticks"
+  [#^Graphics2D g [width height :as dims]]
+  (let [; sizes
+        size               (min width height)
+        padding            (*padding* size)
+        d-max              (- size (* 2 padding))
+        diam-hours         (*diam-hours* d-max)
+        diam-minutes       (*diam-minutes* d-max)
+        diam-seconds       (*diam-seconds* d-max)
+        ; decorative arcs
+        center-dot-w       (make-arc dims (* d-max 0.07) 0 360)
+        center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
+        div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
+        div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
+        outer              (make-arc dims d-max 0 360 Arc2D/OPEN)]
+    (.setRenderingHint g
+                       RenderingHints/KEY_ANTIALIASING
+                       RenderingHints/VALUE_ANTIALIAS_ON)
+    (doto g
+      (.setStroke (new BasicStroke 2))
+      (.setColor *divider-color*)
+      (.draw div1)
+      (.draw div2)
+      ;[center-dot-w *divider-color*]
+      ;[center-dot-b (Color/darkGray)]
+      (.draw outer)
+      (.setStroke (new BasicStroke 0.5))
+      (.setColor (new Color 0 0 0 120)))
+    (let [c-x (/ width 2)
+          c-y (/ height 2)
+          r-max (/ d-max 2)]
+      (doseq [n (range 1 13)]
+        (let [[theta r1 r2] (endpoint-for-tick r-max n)
+              [x1 y1] (polar-to-cartesian r1 theta)
+              [x2 y2] (polar-to-cartesian r2 theta)]
+          (.drawLine g (+ x1 c-x) (+ y1 c-y) (+ x2 c-x) (+ y2 c-y)))))
+  (.dispose g)))
+
+(defn get-overlay
+  [#^Graphics2D g [width height :as dims]]
+  (if (and (= dims @LAST-DIMS) @OVERLAY)
+      nil
+      (let [new-image (new BufferedImage width height BufferedImage/TYPE_INT_ARGB)
+            new-context (.getGraphics new-image)]
+        (draw-overlay new-context dims)
+        (dosync
+          (ref-set LAST-DIMS dims)
+          (ref-set OVERLAY new-image))
+        (.dispose new-context)))
+  (.drawImage g @OVERLAY 0 0 width height nil nil))
+
 (defn draw-clock
-  [p #^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
+  [#^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
   (let [; sizes
         size               (min width height)
         padding            (*padding* size)
@@ -99,12 +154,6 @@
         s-arc              (make-arc dims diam-seconds 0 360)
         [s-start s-extent] (calc-arc seconds 60 even-minute)
         s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
-        ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.07) 0 360)
-        center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
-        div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
-        div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
-        outer              (make-arc dims d-max 0 360 Arc2D/OPEN)
         ]
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
@@ -118,34 +167,17 @@
                          [m-arc-cur *background-color*]
                          [h-arc     *color-hours*]
                          [h-arc-cur *background-color*]
-                         [center-dot-w *divider-color*]
-                         [center-dot-b (Color/darkGray)]
                         ]]
       (doto g
         (.setColor color)
         (.fill arc)))
-    (doto g
-      (.setStroke (new BasicStroke 2))
-      (.setColor *divider-color*)
-      (.draw div1)
-      (.draw div2)
-      (.draw outer)
-      (.setStroke (new BasicStroke 0.5))
-      (.setColor (new Color 0 0 0 120)))
-    (let [c-x (/ width 2)
-          c-y (/ height 2)
-          r-max (/ d-max 2)]
-      (doseq [n (range 1 13)]
-        (let [[theta r1 r2] (endpoint-for-tick r-max n)
-              [x1 y1] (polar-to-cartesian r1 theta)
-              [x2 y2] (polar-to-cartesian r2 theta)]
-          (.drawLine g (+ x1 c-x) (+ y1 c-y) (+ x2 c-x) (+ y2 c-y)))))
+    (get-overlay g dims)
     (.dispose g)))
 
 (defn draw-panel
  [#^JPanel p #^Graphics2D g clock]
  (let [dims [(.getWidth p) (.getHeight p)]]
-   (draw-clock p g dims @clock)))
+   (draw-clock g dims @clock)))
 
 (def panel (doto (proxy [JPanel] []
                         (paint [g] (draw-panel panel g CLOCK)))
