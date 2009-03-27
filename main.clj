@@ -1,7 +1,7 @@
 (ns com.culturethree.Timer
 	(:import (javax.swing JFrame JPanel JButton BorderFactory)
 	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
-	         (java.awt.geom Arc2D Arc2D$Float)
+	         (java.awt.geom Arc2D Arc2D$Double)
            (java.util Calendar)))
 
 
@@ -54,7 +54,7 @@
           top  (/ (- h diam) 2)
           start1 (rem (+ 90 start) 360)
           extent1   (rem (+ 90 extent) 360)]
-      (new Arc2D$Float left top diam diam start1 extent cap)))
+      (new Arc2D$Double left top diam diam start1 extent cap)))
   ([dims diam start extent]
     (make-arc dims diam start extent Arc2D/PIE)))
 
