@@ -8,8 +8,8 @@
 (def *size* 400)
 (def *padding* #(/ % 10))
 
-(def *color-minutes* Color/lightGray)
-(def *color-hours* Color/gray)
+(def *color-minutes* (new Color 50 50 60))
+(def *color-hours* (new Color 170 170 180))
 (def *color-seconds* (new Color 200 50 50))
 
 (def *panel-background-color* (new Color 253 253 253))
@@ -17,7 +17,7 @@
 (def *divider-color* Color/white)
 
 (def *diam-minutes* #(* % 0.975))
-(def *diam-hours* #(* % 0.55))
+(def *diam-hours* #(* % 0.7))
 (def *diam-seconds* identity)
 
 (defstruct clock :hours :minutes :seconds)
@@ -83,7 +83,7 @@
         [s-start s-extent] (calc-arc seconds 60 even-minute)
         s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
         ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.02) 0 360)
+        center-dot-w       (make-arc dims (* d-max 0.1) 0 360)
         center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
         div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
         div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
@@ -124,7 +124,7 @@
                         (paint [g] (draw-panel panel g CLOCK)))
                  (.setPreferredSize (new Dimension *size* *size*))
                  (.setBackground *panel-background-color*)
-                 (.setMinimumSize (new Dimension 50 50))
+                 (.setMinimumSize (new Dimension 150 150))
                  (.setMaximumSize (new Dimension 2000 2000))))
 
 (def frame (doto (new JFrame "Clock")
