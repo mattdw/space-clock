@@ -1,10 +1,12 @@
 (ns com.culturethree.Timer
-	(:import (javax.swing JFrame JPanel JButton BorderFactory)
+	(:import (javax.swing JFrame JPanel)
 	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
 	         (java.awt.image BufferedImage)
 	         (java.awt.geom Arc2D Arc2D$Double)
            (java.util Calendar)))
 
+;;
+;; CONSTANTS – MODIFY TO TASTES
 
 (def *size* 400)
 (def *padding* #(/ % 10))
@@ -17,9 +19,15 @@
 (def *background-color* *panel-background-color*)
 (def *divider-color* Color/white)
 
-(def *diam-minutes* #(* % 0.975))
+;; Diameter constants should be provided as a function which will be
+;; passed the current maximum diameter. The defaults here represent
+;; a proportion of the diameter.
+(def *diam-minutes* #(* % 0.97))
 (def *diam-hours* #(* % 0.7))
 (def *diam-seconds* identity)
+
+;; END CONSTANTS
+;;
 
 (defstruct clock :hours :minutes :seconds)
 (def CLOCK (atom (struct clock 11 22 33)))
@@ -46,12 +54,14 @@
     [x y]))
 
 (defn endpoint-for-tick
-  "returns (in radians) the endpoints for a tick mark from 0-11"
+  "returns (in radians) the endpoints for a tick mark from 1-12"
   [diam n]
   (let [pi2 (* Math/PI 2)
         ratio (/ n 12)
         theta (* ratio pi2)
+        ; tick marks start just outside the diameter
         r-start (+ diam (* diam 0.02))
+        ; and have a length proportional to their number value
         r-end (+ (* ratio diam 0.15) r-start)]
     [(rem (+ theta (* pi2 0.75)) pi2) r-start r-end]))
 
@@ -61,14 +71,17 @@
   (let [percent (/ current total)
         degrees (* percent 360)]
     (if (not even?)
+      ; if it's odd, the leading edge is moving
       (let [start 0
             extent degrees]
         [(- start) (- extent)])
+      ; if it's even, the trailing edge is moving
       (let [start degrees
             extent (- 360 degrees)]
         [(- start) (- extent)]))))
 
 (defn make-arc
+  "Return a new Arc2D, calculating correct location around a center point"
   ([[w h] diam start extent cap]
     (let [left (/ (- w diam) 2)
           top  (/ (- h diam) 2)
@@ -79,7 +92,7 @@
     (make-arc dims diam start extent Arc2D/PIE)))
 
 (defn draw-overlay
-  "div1, div2, outer, center-dot-{w,b}, ticks"
+  "Draw the clock decorations – section dividers, center point, tick marks."
   [#^Graphics2D g [width height :as dims]]
   (let [; sizes
         size               (min width height)
@@ -89,8 +102,8 @@
         diam-minutes       (*diam-minutes* d-max)
         diam-seconds       (*diam-seconds* d-max)
         ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.07) 0 360)
-        center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
+        center-dot-w       (make-arc dims (* d-max 0.06) 0 360)
+        center-dot-b       (make-arc dims (* d-max 0.015) 0 360)
         div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
         div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
         outer              (make-arc dims d-max 0 360 Arc2D/OPEN)]
@@ -98,14 +111,12 @@
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
     (doto g
-      (.setStroke (new BasicStroke 2))
+      (.setStroke (new BasicStroke (* d-max 0.0065)))
       (.setColor *divider-color*)
       (.draw div1)
       (.draw div2)
-      ;[center-dot-w *divider-color*]
-      ;[center-dot-b (Color/darkGray)]
       (.draw outer)
-      (.setStroke (new BasicStroke 0.5))
+      (.setStroke (new BasicStroke (* d-max 0.005)))
       (.setColor (new Color 0 0 0 120)))
     (let [c-x (/ width 2)
           c-y (/ height 2)
@@ -115,12 +126,16 @@
               [x1 y1] (polar-to-cartesian r1 theta)
               [x2 y2] (polar-to-cartesian r2 theta)]
           (.drawLine g (+ x1 c-x) (+ y1 c-y) (+ x2 c-x) (+ y2 c-y)))))
-  (.dispose g)))
+    (doseq [[arc color] [[center-dot-w *divider-color*]
+                         [center-dot-b (Color/darkGray)]]]
+      (.setColor g color)
+      (.fill g arc))
+    (.dispose g)))
 
 (defn get-overlay
+  "Retrieve from cache (redrawing if necessary) and draw the overlay."
   [#^Graphics2D g [width height :as dims]]
-  (if (and (= dims @LAST-DIMS) @OVERLAY)
-      nil
+  (when (not (and (= dims @LAST-DIMS) @OVERLAY))
       (let [new-image (new BufferedImage width height BufferedImage/TYPE_INT_ARGB)
             new-context (.getGraphics new-image)]
         (draw-overlay new-context dims)
@@ -131,6 +146,7 @@
   (.drawImage g @OVERLAY 0 0 width height nil nil))
 
 (defn draw-clock
+  "Draw the clock, as a series of overlaid concentric circles and arcs."
   [#^Graphics2D g [width height :as dims] {:keys [hours minutes seconds] :as clock}]
   (let [; sizes
         size               (min width height)
@@ -147,10 +163,10 @@
         ; arcs
         h-arc              (make-arc dims diam-hours 0 360)
         [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
-        h-arc-cur          (make-arc dims diam-hours h-start h-extent)
+        h-arc-cur          (make-arc dims (* diam-hours 1.005) h-start h-extent)
         m-arc              (make-arc dims diam-minutes 0 360)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
-        m-arc-cur          (make-arc dims diam-minutes m-start m-extent)
+        m-arc-cur          (make-arc dims (* diam-minutes 1.005) m-start m-extent)
         s-arc              (make-arc dims diam-seconds 0 360)
         [s-start s-extent] (calc-arc seconds 60 even-minute)
         s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
@@ -175,9 +191,10 @@
     (.dispose g)))
 
 (defn draw-panel
- [#^JPanel p #^Graphics2D g clock]
- (let [dims [(.getWidth p) (.getHeight p)]]
-   (draw-clock g dims @clock)))
+  "Call render function with current dimensions and time. Keeps draw-clock pure."
+  [#^JPanel p #^Graphics2D g clock]
+  (let [dims [(.getWidth p) (.getHeight p)]]
+    (draw-clock g dims @clock)))
 
 (def panel (doto (proxy [JPanel] []
                         (paint [g] (draw-panel panel g CLOCK)))
@@ -191,7 +208,7 @@
                  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
                  .pack .show))
 
-(defn timer-loop
+(defn main-loop
   []
   (let [d (Calendar/getInstance)
         h (.get d (Calendar/HOUR_OF_DAY))
@@ -206,4 +223,4 @@
     (Thread/sleep (- 1000 ms))
     (recur)))
 
-(timer-loop)
+(main-loop)
