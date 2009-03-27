@@ -12,6 +12,10 @@
 (def *color-hours* Color/gray)
 (def *color-seconds* (new Color 200 50 50))
 
+(def *panel-background-color* (new Color 253 253 253))
+(def *background-color* *panel-background-color*)
+(def *divider-color* Color/white)
+
 (def *diam-minutes* #(* % 0.975))
 (def *diam-hours* #(* % 0.55))
 (def *diam-seconds* identity)
@@ -88,14 +92,16 @@
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
+    
+    (.clearRect g 0 0 width height)
     (doseq [[arc color] [
                          [s-arc     *color-seconds*]
-                         [s-arc-cur (Color/white)]
+                         [s-arc-cur *background-color*]
                          [m-arc     *color-minutes*]
-                         [m-arc-cur (Color/white)]
+                         [m-arc-cur *background-color*]
                          [h-arc     *color-hours*]
-                         [h-arc-cur (Color/white)]
-                         [center-dot-w (Color/white)]
+                         [h-arc-cur *background-color*]
+                         [center-dot-w *divider-color*]
                          [center-dot-b (Color/darkGray)]
                         ]]
       (doto g
@@ -103,7 +109,7 @@
         (.fill arc)))
     (doto g
       (.setStroke (new BasicStroke 2))
-      (.setColor Color/white)
+      (.setColor *divider-color*)
       (.draw div1)
       (.draw div2)
       (.draw outer))
@@ -117,6 +123,7 @@
 (def panel (doto (proxy [JPanel] []
                         (paint [g] (draw-panel panel g CLOCK)))
                  (.setPreferredSize (new Dimension *size* *size*))
+                 (.setBackground *panel-background-color*)
                  (.setMinimumSize (new Dimension 50 50))
                  (.setMaximumSize (new Dimension 2000 2000))))
 
