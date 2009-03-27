@@ -35,6 +35,23 @@
   [{h :hours}]
   (even? (quot h 1)))
 
+(defn polar-to-cartesian
+  "convert polar coordinates to their cartesian equivalent"
+  [r theta]
+  (let [x (* r (Math/cos theta))
+        y (* r (Math/sin theta))]
+    [x y]))
+
+(defn endpoint-for-tick
+  "returns (in radians) the endpoints for a tick mark from 0-11"
+  [diam n]
+  (let [pi2 (* Math/PI 2)
+        ratio (/ n 12)
+        theta (* ratio pi2)
+        r-start (+ diam (* diam 0.02))
+        r-end (+ (* ratio diam 0.15) r-start)]
+    [(rem (+ theta (* pi2 0.75)) pi2) r-start r-end]))
+
 (defn calc-arc
   "Return start and extent of arc for component"
   [current total even?]
@@ -112,7 +129,17 @@
       (.setColor *divider-color*)
       (.draw div1)
       (.draw div2)
-      (.draw outer))
+      (.draw outer)
+      (.setStroke (new BasicStroke 0.5))
+      (.setColor (new Color 0 0 0 120)))
+    (let [c-x (/ width 2)
+          c-y (/ height 2)
+          r-max (/ d-max 2)]
+      (doseq [n (range 1 13)]
+        (let [[theta r1 r2] (endpoint-for-tick r-max n)
+              [x1 y1] (polar-to-cartesian r1 theta)
+              [x2 y2] (polar-to-cartesian r2 theta)]
+          (.drawLine g (+ x1 c-x) (+ y1 c-y) (+ x2 c-x) (+ y2 c-y)))))
     (.dispose g)))
 
 (defn draw-panel
