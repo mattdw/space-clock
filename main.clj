@@ -100,7 +100,7 @@
         [s-start s-extent] (calc-arc seconds 60 even-minute)
         s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
         ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.1) 0 360)
+        center-dot-w       (make-arc dims (* d-max 0.07) 0 360)
         center-dot-b       (make-arc dims (* d-max 0.01) 0 360)
         div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
         div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
