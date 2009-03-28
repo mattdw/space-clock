@@ -23,7 +23,7 @@
 ;; passed the current maximum diameter. The defaults here represent
 ;; a proportion of the diameter.
 (def *diam-minutes* #(* % 0.97))
-(def *diam-hours* #(* % 0.7))
+(def *diam-hours* #(* % 0.9))
 (def *diam-seconds* identity)
 
 ;; END CONSTANTS
@@ -102,7 +102,7 @@
         diam-minutes       (*diam-minutes* d-max)
         diam-seconds       (*diam-seconds* d-max)
         ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.06) 0 360)
+        center-dot-w       (make-arc dims (* d-max 0.04) 0 360)
         center-dot-b       (make-arc dims (* d-max 0.015) 0 360)
         div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
         div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
