@@ -1,4 +1,4 @@
-(ns com.culturethree.Timer
+(ns com.culturethree.SpaceClock
 	(:import (javax.swing JFrame JPanel)
 	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
 	         (java.awt.image BufferedImage)
