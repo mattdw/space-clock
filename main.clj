@@ -30,7 +30,7 @@
 ;;
 
 (defstruct clock :hours :minutes :seconds)
-(def CLOCK (atom (struct clock 11 22 33)))
+(def CLOCK (atom (struct clock 0 0 0)))
 (def LAST-DIMS (ref [0 0]))
 (def OVERLAY (ref nil))
 
@@ -220,7 +220,9 @@
         h-floating (+ h (/ m-floating 60))]
     (swap! CLOCK assoc :hours h-floating :minutes m-floating :seconds s-floating)
     (.repaint #^JPanel panel)
-    (Thread/sleep (- 1000 ms))
+    (let [new-d (Calendar/getInstance)
+	  new-ms (.get new-d (Calendar/MILLISECOND))]
+      (Thread/sleep (- 1000 new-ms)))
     (recur)))
 
 (main-loop)
