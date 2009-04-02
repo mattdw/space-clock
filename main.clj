@@ -8,16 +8,20 @@
 ;;
 ;; CONSTANTS – MODIFY TO TASTES
 
-(def *size* 400)
+(def *default-size* 400)
+(let [size-arg (first (filter #(.startsWith % "-s=") *command-line-args*))
+      size (if size-arg (second (.split size-arg "=")) *default-size*)]
+  (def *size* (int (new Integer size))))
+
 (def *padding* #(/ % 10))
 
 (def *color-minutes* (new Color 50 50 60))
 (def *color-hours* (new Color 170 170 180))
 (def *color-seconds* (new Color 200 50 50))
 
-(def *panel-background-color* Color/white)
+(def *panel-background-color* (new Color 255 255 255 255))
 (def *background-color* *panel-background-color*)
-(def *divider-color* Color/white)
+(def *divider-color* *background-color*)
 
 ;; Diameter constants should be provided as a function which will be
 ;; passed the current maximum diameter. The defaults here represent
@@ -124,7 +128,7 @@
       (.draw div2)
       (.draw outer)
       (.setStroke (new BasicStroke (* d-max 0.005)))
-      (.setColor (new Color 0 0 0 120)))
+      (.setColor (new Color 0 0 0 180)))
     (let [c-x (/ width 2)
           c-y (/ height 2)
           r-max (/ d-max 2)]
@@ -212,6 +216,8 @@
 
 (def frame (doto (new JFrame "Clock")
                  (.add panel)
+                 (.setUndecorated true)
+                 (.setBackground (new Color 0 0 0 0))
                  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
                  .pack .show))
 
