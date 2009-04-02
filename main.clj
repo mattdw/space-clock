@@ -15,7 +15,7 @@
 (def *color-hours* (new Color 170 170 180))
 (def *color-seconds* (new Color 200 50 50))
 
-(def *panel-background-color* (new Color 253 253 253))
+(def *panel-background-color* Color/white)
 (def *background-color* *panel-background-color*)
 (def *divider-color* Color/white)
 
