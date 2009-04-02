@@ -2,7 +2,7 @@
 	(:import (javax.swing JFrame JPanel)
 	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
 	         (java.awt.image BufferedImage)
-	         (java.awt.geom Arc2D Arc2D$Double)
+	         (java.awt.geom Arc2D Arc2D$Double Ellipse2D$Float)
            (java.util Calendar)))
 
 ;;
@@ -91,22 +91,29 @@
   ([dims diam start extent]
     (make-arc dims diam start extent Arc2D/PIE)))
 
+(defn make-circle
+  "Return a new Ellipse 2D, calculating correct location as per make-arc"
+  [[w h] diam]
+  (let [left (/ (- w diam) 2)
+        top  (/ (- h diam) 2)]
+    (new Ellipse2D$Float left top diam diam)))
+
 (defn draw-overlay
   "Draw the clock decorations – section dividers, center point, tick marks."
   [#^Graphics2D g [width height :as dims]]
-  (let [; sizes
+  (let [;; sizes
         size               (min width height)
         padding            (*padding* size)
         d-max              (- size (* 2 padding))
         diam-hours         (*diam-hours* d-max)
         diam-minutes       (*diam-minutes* d-max)
         diam-seconds       (*diam-seconds* d-max)
-        ; decorative arcs
-        center-dot-w       (make-arc dims (* d-max 0.04) 0 360)
-        center-dot-b       (make-arc dims (* d-max 0.015) 0 360)
-        div1               (make-arc dims diam-hours 0 360 Arc2D/OPEN)
-        div2               (make-arc dims diam-minutes 0 360 Arc2D/OPEN)
-        outer              (make-arc dims d-max 0 360 Arc2D/OPEN)]
+        ;; decorative arcs
+        center-dot-w       (make-circle dims (* d-max 0.04))
+        center-dot-b       (make-circle dims (* d-max 0.015))
+        div1               (make-circle dims diam-hours)
+        div2               (make-circle dims diam-minutes)
+        outer              (make-circle dims d-max)]
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
@@ -161,13 +168,13 @@
         twelve-hours       (rem hours 12)
         is-pm              (is-pm? clock)
         ; arcs
-        h-arc              (make-arc dims diam-hours 0 360)
+        h-arc              (make-circle dims diam-hours)
         [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
         h-arc-cur          (make-arc dims (* diam-hours 1.005) h-start h-extent)
-        m-arc              (make-arc dims diam-minutes 0 360)
+        m-arc              (make-circle dims diam-minutes)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
         m-arc-cur          (make-arc dims (* diam-minutes 1.005) m-start m-extent)
-        s-arc              (make-arc dims diam-seconds 0 360)
+        s-arc              (make-circle dims diam-seconds)
         [s-start s-extent] (calc-arc seconds 60 even-minute)
         s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
         ]
