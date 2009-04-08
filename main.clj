@@ -1,6 +1,6 @@
 (ns com.culturethree.SpaceClock
 	(:import (javax.swing JFrame JPanel)
-	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke)
+	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke GradientPaint)
 	         (java.awt.image BufferedImage)
 	         (java.awt.geom Arc2D Arc2D$Double Ellipse2D$Float)
            (java.util Calendar)))
@@ -16,7 +16,7 @@
 (def *padding* #(/ % 10))
 
 (def *color-minutes* (new Color 50 50 60))
-(def *color-hours* (new Color 170 170 180))
+(def *color-hours* (new GradientPaint 0 0 (new Color 170 170 180) *size* *size* (new Color 200 200 210)))
 (def *color-seconds* (new Color 200 50 50))
 
 (def *panel-background-color* (new Color 255 255 255 255))
@@ -74,12 +74,12 @@
   [current total even?]
   (let [percent (/ current total)
         degrees (* percent 360)]
-    (if (not even?)
-      ; if it's odd, the leading edge is moving
+    (if even?
+      ; if it's even, the leading edge is moving
       (let [start 0
             extent degrees]
         [(- start) (- extent)])
-      ; if it's even, the trailing edge is moving
+      ; if it's odd, the trailing edge is moving
       (let [start degrees
             extent (- 360 degrees)]
         [(- start) (- extent)]))))
@@ -114,19 +114,11 @@
         diam-seconds       (*diam-seconds* d-max)
         ;; decorative arcs
         center-dot-w       (make-circle dims (* d-max 0.04))
-        center-dot-b       (make-circle dims (* d-max 0.015))
-        div1               (make-circle dims diam-hours)
-        div2               (make-circle dims diam-minutes)
-        outer              (make-circle dims d-max)]
+        center-dot-b       (make-circle dims (* d-max 0.015))]
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
     (doto g
-      (.setStroke (new BasicStroke (* d-max 0.0065)))
-      (.setColor *divider-color*)
-      (.draw div1)
-      (.draw div2)
-      (.draw outer)
       (.setStroke (new BasicStroke (* d-max 0.005)))
       (.setColor (new Color 0 0 0 180)))
     (let [c-x (/ width 2)
@@ -174,13 +166,13 @@
         ; arcs
         h-arc              (make-circle dims diam-hours)
         [h-start h-extent] (calc-arc twelve-hours 12 is-pm)
-        h-arc-cur          (make-arc dims (* diam-hours 1.005) h-start h-extent)
+        h-arc-cur          (make-arc dims (* diam-hours 0.984) h-start h-extent)
         m-arc              (make-circle dims diam-minutes)
         [m-start m-extent] (calc-arc minutes 60 even-hour)
-        m-arc-cur          (make-arc dims (* diam-minutes 1.005) m-start m-extent)
+        m-arc-cur          (make-arc dims (* diam-minutes 0.988) m-start m-extent)
         s-arc              (make-circle dims diam-seconds)
         [s-start s-extent] (calc-arc seconds 60 even-minute)
-        s-arc-cur          (make-arc dims diam-seconds s-start s-extent)
+        s-arc-cur          (make-arc dims (* diam-seconds 0.988) s-start s-extent)
         ]
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
@@ -188,15 +180,15 @@
     
     (.clearRect g 0 0 width height)
     (doseq [[arc color] [
-                         [s-arc     *color-seconds*]
-                         [s-arc-cur *background-color*]
-                         [m-arc     *color-minutes*]
-                         [m-arc-cur *background-color*]
-                         [h-arc     *color-hours*]
-                         [h-arc-cur *background-color*]
+                         [s-arc     *background-color*]
+                         [s-arc-cur *color-seconds*]
+                         [m-arc     *background-color*]
+                         [m-arc-cur *color-minutes*]
+                         [h-arc     *background-color*]
+                         [h-arc-cur *color-hours*]
                         ]]
       (doto g
-        (.setColor color)
+        (.setPaint color)
         (.fill arc)))
     (get-overlay g dims)
     (.dispose g)))
