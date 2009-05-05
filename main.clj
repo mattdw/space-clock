@@ -16,10 +16,12 @@
 (def *padding* #(/ % 10))
 
 (def *color-minutes* (new Color 50 50 60))
-(def *color-hours* (new GradientPaint 0 0 (new Color 170 170 180) *size* *size* (new Color 200 200 210)))
+(def *color-hours* (new GradientPaint
+                        0 0 (new Color 150 150 155) 
+                        *size* 0 (new Color 200 200 210)))
 (def *color-seconds* (new Color 200 50 50))
 
-(def *panel-background-color* (new Color 255 255 255 255))
+(def *panel-background-color* (new Color 250 250 252 255))
 (def *background-color* *panel-background-color*)
 (def *divider-color* *background-color*)
 
