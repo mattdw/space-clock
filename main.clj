@@ -1,9 +1,10 @@
 (ns com.culturethree.SpaceClock
 	(:import (javax.swing JFrame JPanel)
-	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke GradientPaint)
+	         (java.awt Color Graphics2D Dimension RenderingHints BasicStroke GradientPaint GraphicsEnvironment)
 	         (java.awt.image BufferedImage)
 	         (java.awt.geom Arc2D Arc2D$Double Ellipse2D$Float)
-           (java.util Calendar)))
+                 (com.sun.awt AWTUtilities AWTUtilities$Translucency)
+                 (java.util Calendar)))
 
 ;;
 ;; CONSTANTS – MODIFY TO TASTES
@@ -179,7 +180,6 @@
     (.setRenderingHint g
                        RenderingHints/KEY_ANTIALIASING
                        RenderingHints/VALUE_ANTIALIAS_ON)
-    
     (.clearRect g 0 0 width height)
     (doseq [[arc color] [
                          [s-arc     *background-color*]
@@ -208,9 +208,17 @@
                  (.setMinimumSize (new Dimension 150 150))
                  (.setMaximumSize (new Dimension 2000 2000))))
 
-(def frame (doto (new JFrame "Clock")
+(let [env (GraphicsEnvironment/getLocalGraphicsEnvironment)
+      devices (.getScreenDevices env)
+      configs (mapcat #(.getConfigurations %) devices)
+      new_conf (first (filter #(AWTUtilities/isTranslucencyCapable %) configs))]
+  (println "found configs:" (count configs))
+  (def gc_conf new_conf))
+
+(def frame (doto (new JFrame "Clock" gc_conf)
                  (.add panel)
                  (.setUndecorated true)
+                 ;(AWTUtilities/setWindowOpaque false)
                  (.setBackground (new Color 0 0 0 0))
                  (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE)
                  .pack .show))
